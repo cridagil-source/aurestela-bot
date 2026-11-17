@@ -1,0 +1,20 @@
+{
+  "name": "whatsapp-sales-bot",
+  "version": "1.0.0",
+  "description": "Chatbot de ventas para WhatsApp usando WhatsApp Cloud API y Express",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "tunnel": "npx untun@latest tunnel --port 3000",
+    "tunnel:lt": "npx localtunnel --port 3000",
+    "test:message": "node test-message.js"
+  },
+  "dependencies": {
+    "@google/genai": "^3.0.0",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}
