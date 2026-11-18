@@ -270,8 +270,18 @@ async function handleRuleBasedFlow(from, text, userName, session) {
   }
 
   // Preguntas de recomendación por ocasión o clima
-  if (lower.includes('calido') || lower.includes('cálido') || lower.includes('dia') || lower.includes('día') || lower.includes('oficina') || lower.includes('fresco')) {
-    const msg = 'Para clima cálido y uso diario, te recomendaría Armaf Eter Arabian Sky. Es unisex y abre con notas cítricas y frutales; además, su fondo amaderado le da un toque más elegante. Está en $358.000 COP. ¿Te gustaría que te ayude a pedirlo?';
+  if (
+    lower.includes('calido') ||
+    lower.includes('cálido') ||
+    lower.includes('dia') ||
+    lower.includes('día') ||
+    lower.includes('oficina') ||
+    lower.includes('fresco') ||
+    lower.includes('versatil') ||
+    lower.includes('versátil') ||
+    lower.includes('diario')
+  ) {
+    const msg = '¡Excelente elección! Para un uso versátil y diario, la opción ideal es *Armaf Eter Arabian Sky ($358.000 COP)*. Es una fragancia unisex que abre con notas cítricas y frutales muy frescas, con un fondo amaderado y toques de caramelo y cuero que le dan muchísima elegancia.\n\n¿Te gustaría que te ayude a coordinar tu pedido?';
     await sendTextMessage(from, msg);
     return;
   }

@@ -31,14 +31,15 @@ Tu objetivo es ayudar a cada persona a elegir una fragancia que encaje con sus g
 
 Hablas en español colombiano natural. Puedes usar expresiones como “con mucho gusto”, “claro que sí”, “te cuento” y “de una” de vez en cuando. Mantén un tono cálido y elegante; evita exagerar el dialecto o usar “parce” y otros modismos en cada mensaje.
 
-## Cómo conversar
-- Escribe mensajes breves, naturales y fáciles de leer en WhatsApp.
-- Haz una pregunta a la vez. No presentes todo el catálogo de golpe, salvo que te lo pidan.
-- Si falta información para recomendar, pregunta por el uso, el clima o el tipo de aroma que prefiere: fresco, dulce, especiado o amaderado.
-- Recomienda primero el producto que mejor encaje y explica brevemente por qué. Ofrece una segunda opción solo si ayuda a comparar.
-- Termina con una invitación sencilla, por ejemplo: “¿Te gustaría que te ayude a pedirlo?”
+## Cómo conversar y vender con empatía humana
+- Escribe mensajes breves, naturales y fáciles de leer en WhatsApp (máximo 2 a 3 oraciones por párrafo).
+- Haz una sola pregunta a la vez. No abraces al cliente con un muro de texto.
+- Si el cliente te responde con palabras cortas como "Versátil", "Para el día", "Dulce", "Noche" o "Fresco", NO vuelvas a preguntar lo mismo: toma su respuesta de inmediato y recomiéndale la fragancia ideal explicándole por qué le va a encantar y su precio en COP.
+- Respeta el contexto previo: si ya sabes qué le gusta o para qué ocasión lo busca, no repitas preguntas innecesarias.
+- Destaca la experiencia y sensación del aroma (por ejemplo: "es fresco y elegante para el día a día", o "es dulce y seductor para la noche").
+- Termina siempre cada recomendación con una pregunta de cierre suave (soft close): "¿Te gustaría que te ayude a coordinar tu pedido?", "¿Te gustaría conocer las notas olfativas a fondo?", o "¿A qué ciudad te lo enviaríamos?".
 - No asumas el género de la persona ni asignes género a una fragancia si el catálogo no lo especifica.
-- Habla de Auréstela como tienda y distribuidora. No digas que fabrica los perfumes ni que las fragancias son de marca propia.
+- Habla de Auréstela como tienda y distribuidora de perfumería fina. No digas que fabrica los perfumes ni que las fragancias son de marca propia.
 
 ## Catálogo disponible
 
@@ -159,17 +160,38 @@ export async function getSalesAiResponse({ from, text, audioBuffer, audioMimeTyp
       parts: currentParts
     });
 
-    // Llamada al modelo Gemini
-    const response = await client.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents,
-      config: {
-        systemInstruction: buildSystemPrompt(),
-        temperature: 0.6
-      }
-    });
+    // Intentar con los modelos más estables y rápidos de Gemini
+    const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+    let replyText = '';
+    let lastError = null;
 
-    const replyText = response.text?.trim() || '';
+    for (const modelName of modelsToTry) {
+      try {
+        console.log(`[Gemini AI] Intentando generar respuesta con modelo ${modelName}...`);
+        const response = await client.models.generateContent({
+          model: modelName,
+          contents,
+          config: {
+            systemInstruction: buildSystemPrompt(),
+            temperature: 0.65
+          }
+        });
+
+        replyText = response.text?.trim() || '';
+        if (replyText) {
+          console.log(`[Gemini AI] Respuesta generada exitosamente con ${modelName}.`);
+          break;
+        }
+      } catch (err) {
+        lastError = err;
+        console.warn(`[Gemini AI] Falló modelo ${modelName}:`, err.message);
+      }
+    }
+
+    if (!replyText && lastError) {
+      console.error('[Gemini AI] No se pudo generar respuesta con ninguno de los modelos:', lastError.message);
+      return null;
+    }
 
     if (replyText) {
       // Guardar en el historial de sesión
