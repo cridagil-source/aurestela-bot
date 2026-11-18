@@ -161,5 +161,19 @@ app.listen(config.port, '0.0.0.0', () => {
   console.log(`📡 URL local del webhook: http://localhost:${config.port}/webhook`);
   console.log(`🔑 Verify Token configurado: "${config.webhookVerifyToken}"`);
   console.log(`=================================================`);
+
+  // Auto-ping para mantener el servidor despierto 24/7 en Render (evita el "spin down" del plan gratuito)
+  const serviceUrl = process.env.RENDER_EXTERNAL_URL || 'https://aurestela-bot.onrender.com';
+  if (process.env.RENDER || process.env.NODE_ENV === 'production') {
+    console.log(`[Keep-Alive] Iniciando rutina anti-suspensión cada 10 minutos para ${serviceUrl}`);
+    setInterval(async () => {
+      try {
+        const res = await fetch(serviceUrl);
+        console.log(`[Keep-Alive] Ping preventivo enviado con éxito (Status: ${res.status})`);
+      } catch (err) {
+        console.warn(`[Keep-Alive] Error enviando ping:`, err.message);
+      }
+    }, 10 * 60 * 1000);
+  }
 });
 
