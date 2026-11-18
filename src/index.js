@@ -150,6 +150,46 @@ app.get('/pedidos', (req, res) => {
   }
 });
 
+// Endpoint de diagnóstico para verificar el estado de la IA y variables en Render
+app.get('/diag', async (req, res) => {
+  const geminiKey = (
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.GEMINI_KEY ||
+    process.env.API_KEY ||
+    ''
+  ).trim();
+
+  res.json({
+    status: 'online',
+    timestamp: new Date().toISOString(),
+    geminiKeyDetected: !!geminiKey,
+    geminiKeyLength: geminiKey.length,
+    geminiKeyPreview: geminiKey ? `${geminiKey.substring(0, 7)}...${geminiKey.slice(-4)}` : 'NINGUNA_DETECTADA',
+    lastAiError: global.lastAiError || 'Ningún error registrado',
+    lastAiSuccess: global.lastAiSuccess || 'Ninguna respuesta exitosa aún'
+  });
+});
+
+// Endpoint para probar directamente la IA desde el navegador
+app.get('/test-ai', async (req, res) => {
+  try {
+    const { getSalesAiResponse } = await import('./services/aiService.js');
+    const result = await getSalesAiResponse({
+      from: 'test_web',
+      text: 'Hola, recomiéndame un perfume versátil para uso diario',
+      userName: 'Cristian'
+    });
+    res.json({
+      success: !!result,
+      result: result || 'IA devolvió null',
+      lastAiError: global.lastAiError || null
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message, stack: err.stack });
+  }
+});
+
 // Rutas de Webhook para WhatsApp Cloud API
 app.get(['/webhook', '/webhook/'], verifyWebhook);
 app.post(['/webhook', '/webhook/'], handleWebhookEvent);

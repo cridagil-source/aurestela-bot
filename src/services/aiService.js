@@ -4,11 +4,24 @@ import { getSession, addMessageToHistory, getColombiaDate, saveOrder } from './s
 let aiClient = null;
 
 function getClient() {
-  const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+  const apiKey = (
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.GEMINI_KEY ||
+    process.env.API_KEY ||
+    ''
+  ).trim();
+
   if (!apiKey) {
+    global.lastAiError = {
+      error: 'NO_KEY',
+      message: 'GEMINI_API_KEY no encontrada en process.env. La IA está inactiva.',
+      timestamp: new Date().toISOString()
+    };
     console.warn('[AI Service] ⚠️ GEMINI_API_KEY no encontrada en process.env. La IA está inactiva.');
     return null;
   }
+
   if (!aiClient) {
     console.log('[AI Service] 🚀 Inicializando cliente GoogleGenAI con API key...');
     aiClient = new GoogleGenAI({ apiKey });
@@ -214,11 +227,21 @@ export async function getSalesAiResponse({ from, text, audioBuffer, audioMimeTyp
     }
 
     if (!replyText && lastError) {
+      global.lastAiError = {
+        error: 'GENERATE_FAILED',
+        message: lastError.message,
+        stack: lastError.stack,
+        timestamp: new Date().toISOString()
+      };
       console.error('[Gemini AI] No se pudo generar respuesta con ninguno de los modelos:', lastError.message);
       return null;
     }
 
     if (replyText) {
+      global.lastAiSuccess = {
+        replyPreview: replyText.substring(0, 100),
+        timestamp: new Date().toISOString()
+      };
       // Guardar en el historial de sesión
       addMessageToHistory(from, 'user', text || '[Nota de voz]');
       addMessageToHistory(from, 'model', replyText);
@@ -231,6 +254,12 @@ export async function getSalesAiResponse({ from, text, audioBuffer, audioMimeTyp
 
     return replyText;
   } catch (error) {
+    global.lastAiError = {
+      error: 'CRITICAL_ERROR',
+      message: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    };
     console.error('Error generando respuesta con Gemini:', error.message);
     return null;
   }
