@@ -92,6 +92,7 @@ export async function handleIncomingSalesMessage({
   }
 
   // 2. Si la IA de Gemini está habilitada, la usamos prioritariamente con el prompt oficial
+  console.log(`[SalesBot] Procesando mensaje de ${from}: "${cleanText}"`);
   const aiResponse = await getSalesAiResponse({
     from,
     text: cleanText,
@@ -101,10 +102,12 @@ export async function handleIncomingSalesMessage({
   });
 
   if (aiResponse) {
+    console.log(`[SalesBot] ✅ Respuesta generada por Gemini para ${from}`);
     await sendTextMessage(from, aiResponse);
     return;
   }
 
+  console.log(`[SalesBot] ℹ️ Usando flujo de respaldo para ${from}`);
   // 3. Fallback inteligente si no hay API Key de IA configurada
   await handleRuleBasedFlow(from, cleanText, userName, session);
 }
@@ -299,6 +302,31 @@ async function handleRuleBasedFlow(from, text, userName, session) {
 
   if (lower.includes('asesor') || lower.includes('humano') || lower.includes('persona')) {
     await sendHumanAdvisorContact(from);
+    return;
+  }
+
+  // Preguntas sobre originalidad y garantía
+  if (lower.includes('original') || lower.includes('copia') || lower.includes('replica') || lower.includes('réplica') || lower.includes('calidad') || lower.includes('garantia') || lower.includes('garantía')) {
+    const msg = '¡Claro que sí! En *Auréstela Perfumería* distribuimos perfumes de casas reconocidas internacionalmente como Lattafa y Armaf. Por ejemplo, nuestro *Khamrah de Lattafa ($155.000 COP)* es una fragancia 100% original con una fijación y estela espectaculares. ¿Te gustaría conocer los detalles de alguna en específico?';
+    await sendTextMessage(from, msg);
+    return;
+  }
+
+  // Preguntas sobre precios
+  if (lower.includes('precio') || lower.includes('precios') || lower.includes('cuanto vale') || lower.includes('cuánto vale') || lower.includes('cuanto cuesta') || lower.includes('cuánto cuesta') || lower.includes('costo') || lower.includes('valor')) {
+    const msg = 'Con mucho gusto, te comparto los precios de nuestras fragancias disponibles:\n\n' +
+      '🌸 *Qaed Al Fursan de Lattafa (100 ml):* $150.000 COP\n' +
+      '🌸 *Khamrah de Lattafa (100 ml):* $155.000 COP (Original)\n' +
+      '🌸 *Armaf Eter Arabian Sky (100 ml EDP):* $358.000 COP\n\n' +
+      '¿Cuál de ellas te gustaría ordenar o conocer más a fondo?';
+    await sendTextMessage(from, msg);
+    return;
+  }
+
+  // Preguntas sobre métodos de pago
+  if (lower.includes('pago') || lower.includes('pagar') || lower.includes('metodo') || lower.includes('método') || lower.includes('nequi') || lower.includes('daviplata') || lower.includes('transferencia') || lower.includes('efectivo')) {
+    const msg = 'Manejamos métodos de pago muy cómodos y seguros: *Transferencia bancaria, Efectivo, Nequi y Daviplata*. Una vez que nos indiques qué fragancia deseas, un asesor valida tus datos para coordinar el despacho. ¿Te gustaría realizar tu pedido?';
+    await sendTextMessage(from, msg);
     return;
   }
 

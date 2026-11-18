@@ -4,8 +4,14 @@ import { getSession, addMessageToHistory, getColombiaDate, saveOrder } from './s
 let aiClient = null;
 
 function getClient() {
-  if (!aiClient && process.env.GEMINI_API_KEY) {
-    aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+  if (!apiKey) {
+    console.warn('[AI Service] ⚠️ GEMINI_API_KEY no encontrada en process.env. La IA está inactiva.');
+    return null;
+  }
+  if (!aiClient) {
+    console.log('[AI Service] 🚀 Inicializando cliente GoogleGenAI con API key...');
+    aiClient = new GoogleGenAI({ apiKey });
   }
   return aiClient;
 }
@@ -155,13 +161,32 @@ export async function getSalesAiResponse({ from, text, audioBuffer, audioMimeTyp
       currentParts.push({ text });
     }
 
+    // Asegurar que haya partes válidas
+    if (currentParts.length === 0) {
+      currentParts.push({ text: 'Hola' });
+    }
+
     contents.push({
       role: 'user',
       parts: currentParts
     });
 
+    // Sanitizar historial para asegurar que comience en 'user' y que los roles alternen siempre
+    const sanitizedContents = [];
+    for (const item of contents) {
+      if (!item.parts || item.parts.length === 0) continue;
+      if (sanitizedContents.length > 0 && sanitizedContents[sanitizedContents.length - 1].role === item.role) {
+        sanitizedContents[sanitizedContents.length - 1].parts.push(...item.parts);
+      } else {
+        sanitizedContents.push({ role: item.role, parts: [...item.parts] });
+      }
+    }
+    while (sanitizedContents.length > 0 && sanitizedContents[0].role !== 'user') {
+      sanitizedContents.shift();
+    }
+
     // Intentar con los modelos más estables y rápidos de Gemini
-    const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+    const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash'];
     let replyText = '';
     let lastError = null;
 
@@ -170,7 +195,7 @@ export async function getSalesAiResponse({ from, text, audioBuffer, audioMimeTyp
         console.log(`[Gemini AI] Intentando generar respuesta con modelo ${modelName}...`);
         const response = await client.models.generateContent({
           model: modelName,
-          contents,
+          contents: sanitizedContents,
           config: {
             systemInstruction: buildSystemPrompt(),
             temperature: 0.65
