@@ -23,8 +23,12 @@ function getClient() {
   }
 
   if (!aiClient) {
-    console.log('[AI Service] 🚀 Inicializando cliente GoogleGenAI con API key...');
-    aiClient = new GoogleGenAI({ apiKey });
+    console.log('[AI Service] 🚀 Inicializando cliente GoogleGenAI con v1beta...');
+    aiClient = new GoogleGenAI({
+      apiKey,
+      apiVersion: 'v1beta',
+      httpOptions: { apiVersion: 'v1beta' }
+    });
   }
   return aiClient;
 }
@@ -198,8 +202,13 @@ export async function getSalesAiResponse({ from, text, audioBuffer, audioMimeTyp
       sanitizedContents.shift();
     }
 
-    // Intentar con los modelos más estables y rápidos de Gemini
-    const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+    // Intentar con los modelos más estables y rápidos de Gemini en v1beta
+    const modelsToTry = [
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-pro'
+    ];
     let replyText = '';
     let lastError = null;
 
